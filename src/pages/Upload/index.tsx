@@ -18,14 +18,12 @@ import { ProcessPayload } from "../../app/services/process/types";
 import processService from "../../app/services/process";
 import audioService from "../../app/services/audios";
 import AudioFileIcon from "@mui/icons-material/AudioFile";
-import { CircularProgress, InputAdornment, TextField } from "@mui/material";
+import { CircularProgress, TextField } from "@mui/material";
 import { useNavigate } from "react-router-dom";
 import { BackPage } from "../../components/BackPage";
 import { AudioProps } from "../../types";
 import InputMask from 'react-input-mask';
-import { GiConsoleController } from "react-icons/gi";
 import React from 'react';
-
 
 export const Upload = () => {
   const [files, setFiles] = useState<File[]>([]);
@@ -192,10 +190,6 @@ export const Upload = () => {
     } finally {
       setIsUploading(false);
     }
-  };
-
-  const handleChange = (e: React.ChangeEvent<HTMLInputElement>) => {
-    setProcessNumber(e.target.value);
   };
 
   return (
