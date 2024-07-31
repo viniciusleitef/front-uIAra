@@ -1,4 +1,4 @@
-import { useEffect, useState } from "react";
+import { ReactNode, useEffect, useState } from "react";
 import {
   ButtonFooter,
   Fields,
@@ -18,7 +18,7 @@ import { ProcessPayload } from "../../app/services/process/types";
 import processService from "../../app/services/process";
 import audioService from "../../app/services/audios";
 import AudioFileIcon from "@mui/icons-material/AudioFile";
-import { CircularProgress, TextField } from "@mui/material";
+import { CircularProgress, InputAdornment, TextField } from "@mui/material";
 import { useNavigate } from "react-router-dom";
 import { BackPage } from "../../components/BackPage";
 import { AudioProps } from "../../types";
@@ -192,26 +192,41 @@ export const Upload = () => {
     }
   };
 
+  const handleChange = (e: React.ChangeEvent<HTMLInputElement>) => {
+    setProcessNumber(e.target.value);
+  };
+
   return (
     <>
       <BackPage />
       <UploadContainer>
         <Fields>
           <Box display="flex" gap={2}>
-            <InputMask
-                mask="99.999.999/9999-99"
-                disabled={false}
-
-              >
+          <InputMask
+              mask="9999999-99.9999.9.99.9999"
+              value={processNumber}
+              onChange={handleChange}
+              disabled={process}
+            >
+              {((inputProps: any): ReactNode => (
                 <TextField
-                  disabled={false}
-                  name="cnpj"
-                  type="text"
-                  label='Cnpj'
-                  placeholder='(e.g.: 60.133.365/0001-16)'
-                  
+                  {...inputProps}
+                  label="Número do Processo"
+                  variant="outlined"
+                  fullWidth
+                  InputProps={{
+                    startAdornment: (
+                      <InputAdornment position="start">#</InputAdornment>
+                    ),
+                  }}
+                  InputLabelProps={{
+                    shrink: true,
+                  }}
+                  disabled={process}
                 />
-              </InputMask>
+              ))as unknown as ReactNode}
+            </InputMask>
+            
             <TextField
               label="Responsável"
               variant="outlined"
