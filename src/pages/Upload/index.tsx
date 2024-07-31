@@ -163,7 +163,6 @@ export const Upload = () => {
         setIsUploading(false);
         return;
       }
-      
       const processPayLoad: ProcessPayload = {
         title: title,
         num_process: cleanedProcessNumber,
@@ -205,30 +204,20 @@ export const Upload = () => {
       <UploadContainer>
         <Fields>
           <Box display="flex" gap={2}>
-          <InputMask
-            mask="9999999-99.9999.9.99.9999"
-            value={processNumber}
-            onChange={handleChange}
-            disabled={process}
-          >
-            {(inputProps: any) => (
-              <TextField
-                {...inputProps}
-                label="Número do Processo"
-                variant="outlined"
-                fullWidth
-                InputProps={{
-                  startAdornment: (
-                    <InputAdornment position="start">#</InputAdornment>
-                  ),
-                }}
-                InputLabelProps={{
-                  shrink: true,
-                }}
-                disabled={process}
-              />
-            )}
-          </InputMask>
+            <InputMask
+                mask="99.999.999/9999-99"
+                disabled={false}
+
+              >
+                <TextField
+                  disabled={false}
+                  name="cnpj"
+                  type="text"
+                  label='Cnpj'
+                  placeholder='(e.g.: 60.133.365/0001-16)'
+                  
+                />
+              </InputMask>
             <TextField
               label="Responsável"
               variant="outlined"
