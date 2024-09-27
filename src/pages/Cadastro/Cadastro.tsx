@@ -1,22 +1,26 @@
 import React, { useState, useContext, useEffect } from "react";
 import { useNavigate } from "react-router-dom";
-import { LoginContainer, ModalContainer } from "./styles";
+import { LoginContainer, ModalContainer } from './styles';
 import Person from "@mui/icons-material/Person";
 import VpnKey from "@mui/icons-material/VpnKey";
+import Mail from "@mui/icons-material/Mail";
 import { AuthContext } from "../../app/context/AuthContext";
 import { StyledInput } from "../../styles/input";
 import LoginIcon from "@mui/icons-material/Login";
 // @ts-ignore
-import ReCAPTCHA from "react-google-recaptcha";
 import { Modal } from "../../components/Modal";
 // @ts-ignore
 const chave_do_site = "6LcNWSIqAAAAAFpJrPF6iRt6ZIO5t9Oo1jLnl7FY"
 
-export const Login = () => {
-  const { user, signInStepOne, validateUser } = useContext(AuthContext);
+export const Cadastro = () => {
+  const { user, signUp, validateUser } = useContext(AuthContext);
+
+  const [name, setName] = useState("");
   const [email, setEmail] = useState("");
   const [password, setPassword] = useState("");
+  const [password2, setPassword2] = useState("");
   const [error, setError] = useState<string | null>(null);
+
   const [captchaToken, setCaptchaToken] = useState<string | null>("null"); // NULL
   const [loading, setLoading] = useState<boolean>(false);
 
@@ -25,9 +29,10 @@ export const Login = () => {
 
   const [errorVerification, setErrorVerification] = useState<string | null>(null);
 
-  const haveAuth = import.meta.env.VITE_HAVE_AUTH
-
   const navigate = useNavigate();
+
+  const emailDomainCheck = false;
+  const allowedDomains = ["jus.br"];
 
   useEffect(() => {
     if (user) {
@@ -35,29 +40,66 @@ export const Login = () => {
     }
   }, [user, navigate]);
 
+  const isPasswordValid = (password: string) => {
+    const hasMinimumLength = password.length >= 6;
+    const hasUpperCase = /[A-Z]/.test(password);
+    const hasLowerCase = /[a-z]/.test(password);
+    const hasNumber = /\d/.test(password);
+    const hasSpecialChar = /[!@#$%^&*(),.?":{}|<>]/.test(password);
+    const hasNoRepeatingChars = !/(.)\1/.test(password);
+
+    return hasMinimumLength && hasUpperCase && hasLowerCase && hasNumber && hasSpecialChar && hasNoRepeatingChars;
+  };
+
+  const isEmailValid = (email: string) => {
+    if (!emailDomainCheck) return true;
+
+    const domain = email.split("@")[1];
+    return allowedDomains.some((allowedDomain) => domain.endsWith(allowedDomain));
+  };
+
   const handleSubmitStepOne = async (e: React.FormEvent) => {
     e.preventDefault();
+
     if (!captchaToken) {
       setError("Por favor complete o CAPTCHA");
       return;
     }
-    setError(null);
+
+    if (password !== password2) {
+      setError("As senhas não coincidem.");
+      return;
+    }
+
+    if (!isPasswordValid(password)) {
+      setError(
+        "A senha deve conter pelo menos 6 dígitos, incluindo letras maiúsculas, minúsculas, números e caracteres especiais, e não incluir repetições sequenciais."
+      );
+      return;
+    }
+
+    if (!isEmailValid(email)) {
+      setError("O email deve terminar com 'jus.br'.");
+      return;
+    }
+
+    setError(null)
+    setErrorVerification(null);
     setLoading(true);
     try {
-      await signInStepOne(email, password, captchaToken);
+      await signUp(name, email, password);
       setError(null);
+      setSecondStep(true);
     } catch (err) {
-      console.log(err)
-      if ((err as any).response?.data?.detail === 'Usuário ainda não foi validado.') {
-        setError(null);
-        setSecondStep(true);
-        return;
-      }
       const errorMessage = (err as any).response?.data?.detail || "Um erro ocorreu";
       setError(errorMessage);
     } finally {
       setLoading(false);
     }
+  };
+  // @ts-ignore
+  const handleCaptchaChange = (token: string | null) => {
+    setCaptchaToken(token);
   };
 
   const handleVerificateAccount = async (e: React.FormEvent) => {
@@ -66,7 +108,7 @@ export const Login = () => {
     setLoading(true);
     try {
       await validateUser(email, verificationCode);
-      setError("Seu usuário foi validado. Faça o login.");
+      setError(null);
       setSecondStep(false);
       navigate('/login')
     } catch (err) {
@@ -76,17 +118,9 @@ export const Login = () => {
       setLoading(false);
     }
   }
-  // @ts-ignore
-  const handleCaptchaChange = (token: string | null) => {
-    setCaptchaToken(token);
-  };
 
-  const handleForgotPassword = () => {
-    navigate('/esqueci-senha')
-  }
-
-  const handleCadatro = () => {
-    navigate('/cadastro')
+  const handleLogin = () => {
+    navigate("/login")
   }
 
   return (
@@ -96,6 +130,16 @@ export const Login = () => {
           <form onSubmit={handleSubmitStepOne}>
             <div>
               <Person />
+              <StyledInput
+                type="name"
+                placeholder="Nome"
+                value={name}
+                onChange={(e) => setName(e.target.value)}
+                required
+              />
+            </div>
+            <div>
+              <Mail />
               <StyledInput
                 type="email"
                 placeholder="Email"
@@ -114,28 +158,26 @@ export const Login = () => {
                 required
               />
             </div>
-            <div className="forgotPasswordOuterContainer">
-              <div onClick={handleForgotPassword} className="forgotPasswordContainer">
-                <p className="forgotPasswordText">Esqueci a senha</p>
-              </div>
+            <div>
+              <VpnKey />
+              <StyledInput
+                type="password"
+                placeholder="Confirmar Senha"
+                value={password2}
+                onChange={(e) => setPassword2(e.target.value)}
+                required
+              />
             </div>
-            {
-              haveAuth == 1 ?
-                <ReCAPTCHA
-                  sitekey={chave_do_site}
-                  onChange={handleCaptchaChange}
-                /> : null
-            }
             {loading && <p>Carregando...</p>}
             {error && <p>{error}</p>}
             <button type="submit">
               <LoginIcon />
-              Entrar
+              Cadastrar
             </button>
 
             <div className="signUpOuterContainer">
-              <div onClick={handleCadatro} className="signUpContainer">
-                <p className="signUpText">Cadastrar conta</p>
+              <div onClick={handleLogin} className="signUpContainer">
+                <p className="signUpText">Fazer Login</p>
               </div>
             </div>
 

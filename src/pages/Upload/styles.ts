@@ -29,10 +29,11 @@ export const Fields = styled.div`
   width: 100%;
   gap: 10px;
   padding: 10px 10px 0 10px;
+  
 `;
 
 export const LoadedAudioContainer = styled.div`
-  max-height: 200px;
+  max-height: 400px;
   overflow-y: auto;
   width: 100%;
   margin-bottom: 20px;
@@ -43,12 +44,15 @@ export const LoadedAudio = styled.div`
   background-color: #eee;
   display: flex;
   align-items: center;
-  padding: 10px 0 10px 10px;
   margin: 10px 0;
   border-radius: 6px;
 
   p {
     margin-left: 10px;
+  }
+  
+  audio{
+    margin-right: 10px;
   }
 `;
 

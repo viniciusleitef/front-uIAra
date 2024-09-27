@@ -9,7 +9,9 @@ import CircularProgress from "@mui/material/CircularProgress";
 import { formatDuration } from "../../utils/formatDuration";
 import { FaRegTrashAlt } from "react-icons/fa";
 import { MdOutlineEdit } from "react-icons/md";
+import { FaCloudDownloadAlt } from "react-icons/fa";
 import processService from "../../app/services/process";
+import pdfService from "../../app/services/pdf";
 import { PopUp } from "../../components/PopUp";
 
 export const AllResults = () => {
@@ -17,6 +19,9 @@ export const AllResults = () => {
   const [isLoading, setIsLoading] = useState(true);
   const [popupVisible, setPopupVisible] = useState(false);
   const [selectedProcess, setSelectedProcess] = useState<string | null>(null);
+  const [playingAudioId, setPlayingAudioId] = useState<number | null>(null);
+  const [audioURL, setAudioURL] = useState<string | null>(null);
+  const [search, setSearch] = useState("");
   const navigate = useNavigate();
 
   useEffect(() => {
@@ -27,6 +32,7 @@ export const AllResults = () => {
     setIsLoading(true);
     try {
       const response = await audioService.getAllAudios();
+      console.log(response.data);
       setProcesses(response.data);
       setIsLoading(false);
     } catch (error) {
@@ -34,6 +40,22 @@ export const AllResults = () => {
       setIsLoading(false);
     }
   };
+
+  const handleDownloadClick = async (num_process: string) => {
+    setSelectedProcess(num_process);
+    try {
+      const response = await pdfService.getPdf(num_process);
+      const url = window.URL.createObjectURL(new Blob([response.data], { type: 'application/pdf' }));
+      const link = document.createElement('a');
+      link.href = url;
+      link.setAttribute('download', `process_${num_process}.pdf`);
+      document.body.appendChild(link);
+      link.click();
+      link.remove();
+  } catch (error) {
+      console.error('Erro ao baixar o PDF:', error);
+  }
+  }
 
   const handleDeleteClick = (num_process: string) => {
     setSelectedProcess(num_process);
@@ -78,10 +100,47 @@ export const AllResults = () => {
     return formatted;
   };
 
+  const formatDate = (dateString: string): string => {
+    // Cria um objeto Date a partir da string recebida
+    const date = new Date(dateString);
+    
+    // Extrai o ano, mês e dia
+    const year = date.getFullYear();
+    const month = String(date.getMonth() + 1).padStart(2, '0'); // Adiciona zero à esquerda se necessário
+    const day = String(date.getDate()).padStart(2, '0'); // Adiciona zero à esquerda se necessário
+  
+    // Retorna a data formatada no formato 'ano-mes-dia'
+    return `${year}-${month}-${day}`;
+  }
+
+  const handlePlayClick = async (audioId: number) => {
+    if (playingAudioId === audioId) {
+      setPlayingAudioId(null);
+      setAudioURL(null); // Pausar o áudio
+      return;
+    }
+  
+    // Definindo o novo áudio a ser reproduzido
+    const newAudioURL = `http://0.0.0.0:8302/audioFile/${audioId}`; // URL do back-end diretamente para streaming
+    
+    // Atualiza o ID do áudio que está sendo reproduzido e a URL do áudio
+    setPlayingAudioId(audioId);
+    setAudioURL(newAudioURL);
+    console.log(newAudioURL);
+  };
+
+  const filteredProcesses = processes.filter(
+    (process) =>
+      process.num_process.includes(search)
+  );
+
   return (
     <>
       <BackPage to="/home" />
       <ResultsContainer>
+        <div className="search-bar">
+          <input type="text" placeholder="Pesquisar processo" value={search} onChange={(e) => setSearch(e.target.value)}/>
+        </div>
         {isLoading ? (
           <div
             style={{
@@ -93,19 +152,29 @@ export const AllResults = () => {
             <CircularProgress />
           </div>
         ) : (
-          processes.map((process) => (
+          filteredProcesses.map((process) => (
             <div key={process.id}>
               <div className="info-box">
                 <div className="infos">
                   <h2>{process.title} #{formatProcessNumber(process.num_process)}</h2>
                   <p>
                     Responsável: {process.responsible} - Data de Criação:{" "}
-                    {process.created_at}
+                    {formatDate(process.created_at)}
                   </p>
                 </div>
 
                 <div className="configs-buttons-box">
+
+                  <div
+                    title="Baixar PDF"
+                    className="trash icon-box"
+                    onClick={() => handleDownloadClick(process.num_process)}
+                  >
+                    <FaCloudDownloadAlt size={25}/>
+                  </div>
+
                   <div 
+                    title="Editar processo"
                     className="icon-box"
                     onClick={() => handleEditClick(process.num_process)}
                   >
@@ -113,30 +182,49 @@ export const AllResults = () => {
                   </div>
 
                   <div
+                    title="Apagar Processo"
                     className="trash icon-box"
                     onClick={() => handleDeleteClick(process.num_process)}
                   >
                     <FaRegTrashAlt size={25} />
                   </div>
+                  
                 </div>
               </div>
               {process.audios.map((audio) => (
                 <Audio key={audio.id}>
-                  <div className="audio">
-                    <AudioFile />
-                    <div className="audio-info">
-                      <span>{audio.title}</span>
-                      <p>Duração {formatDuration(audio.audio_duration)}</p>
+                  <div className="audio-container"> 
+                    <div className="audio">
+                      <AudioFile />
+                      <div className="audio-info">
+                        <span>{audio.title}</span>
+                        <p>Duração {formatDuration(audio.audio_duration)}</p>
+                       
+                      </div>
+
                     </div>
+
+                    <div
+                      className={`classification ${
+                        audio.classification ? "true" : "false"
+                      }`}
+                    >
+                      {audio.classification ? "Humano" : "Sintético"}
+                    </div>
+                    <div className="accuracy">{audio.accuracy}%</div>
+
                   </div>
-                  <div
-                    className={`classification ${
-                      audio.classification ? "true" : "false"
-                    }`}
-                  >
-                    {audio.classification ? "Humano" : "Sintético"}
-                  </div>
-                  <div className="accuracy">{audio.accuracy}%</div>
+
+                  <div className="audioPlayer">
+                    
+                    <button onClick={() => handlePlayClick(audio.id)} className="playerButton">
+                      {playingAudioId === audio.id ? 'Parar' : 'Reproduzir'}
+                    </button>
+
+                    {playingAudioId === audio.id && audioURL && (
+                      <audio src={audioURL} controls autoPlay preload=""/>
+                        )}
+                  </div>    
                 </Audio>
               ))}
             </div>

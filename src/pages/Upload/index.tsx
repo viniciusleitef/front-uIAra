@@ -97,7 +97,7 @@ export const Upload = () => {
   };
 
   const uploadAllFiles = async () => {
-
+    
     const cleanedProcessNumber = cleanProcessNumber(processNumber);
 
     if (process){
@@ -109,7 +109,7 @@ export const Upload = () => {
         try {
           const deletePromises = audiosToDelete.map(audio => audioService.deleteAudio(audio.id));
           const audioResponses = await Promise.all(deletePromises);
-          console.log(audioResponses);
+          console.log(audioResponses)
         } catch (error) {
           console.error("Error deleting audio files:", error);
           setErrorMessage("Erro ao excluir os arquivos");
@@ -177,9 +177,6 @@ export const Upload = () => {
 
       const audioResponse = await audioService.postAudio(formData);
       const audioResponseData = audioResponse.data
-      console.log(audioResponseData)
-
-      console.log(audioResponseData)
 
       navigate(`/result/${cleanedProcessNumber}`, { state: { audioResponseData } });
       setFiles([]);
@@ -193,7 +190,7 @@ export const Upload = () => {
   };
 
   const handleChange = (e: React.ChangeEvent<HTMLInputElement>) => {
-    setProcessNumber(e.target.value);
+    setProcessNumber(cleanProcessNumber(e.target.value));
   };
 
   return (
@@ -201,7 +198,7 @@ export const Upload = () => {
       <BackPage />
       <UploadContainer>
         <Fields>
-          <Box display="flex" gap={2}>
+          <Box display="flex" gap={2} flexDirection={{ xs: 'column', md: 'row' }}>
           <InputMask
               mask="9999999-99.9999.9.99.9999"
               value={processNumber}
@@ -295,6 +292,7 @@ export const Upload = () => {
                 </Typography>
         
                 <IconButton
+                  title="Deletar áudio"
                   onClick={() => removeExistingFile(file.id)}
                   aria-label="delete"
                 >
@@ -311,6 +309,10 @@ export const Upload = () => {
                 >
                   {file.name}
                 </Typography>
+                <audio controls>
+                  <source src={URL.createObjectURL(file)} type={file.type} />
+                  Your browser does not support the audio element.
+                </audio>
 
                 <IconButton
                   onClick={() => removeFile(index)}
@@ -339,7 +341,7 @@ export const Upload = () => {
             color="primary"
             onClick={uploadAllFiles}
             disabled={
-              !isModified || !processNumber || !responsible || !title
+              !isModified || !((processNumber).length==20) || !responsible || !title || !(files.length || existingFiles.length)
             }
           >
             Enviar Processo
