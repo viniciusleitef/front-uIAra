@@ -22,8 +22,9 @@ import { CircularProgress, InputAdornment, TextField } from "@mui/material";
 import { useNavigate } from "react-router-dom";
 import { BackPage } from "../../components/BackPage";
 import { AudioProps } from "../../types";
+import { AuthContext } from "../../app/context/AuthContext";
+import React, { useContext } from "react";
 import InputMask from 'react-input-mask';
-import React from 'react';
 
 export const Upload = () => {
   const [files, setFiles] = useState<File[]>([]);
@@ -41,13 +42,18 @@ export const Upload = () => {
   const location = useLocation();
 
   const { process } = location.state || {};
-
+  const { user } = useContext(AuthContext);
+  
   useEffect(() => {
     if (process) {
       setProcessNumber(process.num_process);
-      setResponsible(process.responsible);
       setTitle(process.title);
       setExistingFiles(process.audios);
+      setResponsible(process.responsible);
+    }
+
+    if(user){
+      setResponsible(user.username)
     }
   }, [process]);
 
@@ -128,7 +134,7 @@ export const Upload = () => {
           audioResponseData = audioResponse.data
   
         } catch (error) {
-          setErrorMessage("Erro ao enviar todos os arquivos");
+          setErrorMessage("1# Erro ao enviar todos os arquivos");
         } finally {
           setIsUploading(false);
         }
@@ -167,23 +173,34 @@ export const Upload = () => {
         responsible: responsible,
       }
 
+      // console.log("BEFORE processService");
       await processService.postProcess(processPayLoad);
-
+      // console.log("AFTER processService");
+      // console.log("BEFORE formData");
       const formData = new FormData();
+      // console.log("AFTER formData");
+      // console.log("BEFORE formData.append");
       formData.append('num_process', cleanedProcessNumber);
+      // console.log("AFTER formData.append");
+      // console.log("BEFORE files.forEach");
       files.forEach((file) => {
         formData.append('files', file);
       });
+      // console.log("AFTER files.forEach");
 
+      console.log("BEFORE audioResponse");
       const audioResponse = await audioService.postAudio(formData);
+      console.log("AFTER audioResponse");
+      // console.log("BEFORE audioResponseData");
       const audioResponseData = audioResponse.data
+      // console.log("AFTER audioResponseData");
 
       navigate(`/result/${cleanedProcessNumber}`, { state: { audioResponseData } });
       setFiles([]);
       setTotalProgress(0);
       setErrorMessage("");
     } catch {
-      setErrorMessage("Erro ao enviar todos os arquivos");
+      setErrorMessage("#2 Erro ao enviar todos os arquivos");
     } finally {
       setIsUploading(false);
     }
@@ -230,7 +247,7 @@ export const Upload = () => {
               fullWidth
               value={responsible}
               onChange={(e) => setResponsible(e.target.value)}
-              disabled={process}
+              disabled={process || user}
             />
           </Box>
           <TextField

@@ -1,6 +1,10 @@
 import api from "..";
 
 class AudioService {
+  getAudioFileURL(audioId: number): string {
+    return `${api.defaults.baseURL}audioFile/${audioId}`;
+  }
+  
   async getAudios(numProcess: string) {
     try {
       console.log("numProcess", numProcess);
@@ -38,6 +42,7 @@ class AudioService {
       });
       return response;
     } catch (error) {
+      console.error("Error in postAudio", error);
       throw error;
     }
   }
